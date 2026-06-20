@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorama Jumex</title>
+    <style>
+        :root {
+            --verde-jumex: #006837;
+            --verde-claro: #8dc63f;
+            --blanco: #ffffff;
+            --gris-oscuro: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #000c49;
+            color: var(--gris-oscuro);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: var(--verde-jumex);
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .tablero-info {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 20px;
+            background: var(--blanco);
+            padding: 12px 30px;
+            border-radius: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .tablero-info span {
+            color: var(--verde-jumex);
+        }
+
+        /* Rejilla del Memorama (4x4 = 16 cartas) */
+        .contenedor-juego {
+            display: grid;
+            grid-template-columns: repeat(4, 130px);
+            grid-template-rows: repeat(4, 130px);
+            gap: 15px;
+            perspective: 1000px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 600px) {
+            .contenedor-juego {
+                grid-template-columns: repeat(4, 80px);
+                grid-template-rows: repeat(4, 80px);
+                gap: 10px;
+            }
+        }
+
+        .carta {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+            cursor: pointer;
+        }
+
+        .carta.volteada {
+            transform: rotateY(180deg);
+        }
+
+        .cara {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Parte trasera de la carta (lo que ven primero con el logo/diseño) */
+        .cara-detras {
+            background: linear-gradient(135deg, var(--verde-jumex), var(--verde-claro));
+            border: 3px solid var(--blanco);
+        }
+
+        .cara-detras::before {
+            content: "JUMEX";
+            color: var(--blanco);
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 600px) {
+            .cara-detras::before { font-size: 0.9rem; }
+        }
+
+        /* Parte delantera (la fruta/jugo) */
+        .cara-frente {
+            background-color: var(--blanco);
+            transform: rotateY(180deg);
+            border: 3px solid var(--verde-jumex);
+        }
+
+        .cara-frente img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Pantalla de Ganador */
+        .modal-victoria {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-contenido {
+            background: var(--blanco);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .modal-contenido h2 {
+            color: var(--verde-jumex);
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+        }
+
+        .modal-contenido p {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .btn-reiniciar {
+            background-color: var(--verde-jumex);
+            color: var(--blanco);
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.2s;
+            text-transform: uppercase;
+        }
+
+        .btn-reiniciar:hover {
+            background-color: #004d28;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Memorama Jumex</h1>
+        <p>¡Demuestra tu agilidad, encuentra los pares y gana el premio!</p>
+    </header>
+
+    <div class="tablero-info">
+        <div>Movimientos: <span id="contador-movimientos">0</span></div>
+        <div>Tiempo: <span id="contador-tiempo">0s</span></div>
+    </div>
+
+    <div class="contenedor-juego" id="tablero">
+        <!-- Las cartas se generarán dinámicamente con JavaScript -->
+    </div>
+
+    <button class="btn-reiniciar" onclick="reiniciarJuego()">Reiniciar Juego</button>
+
+    <!-- Modal de Victoria -->
+    <div class="modal-victoria" id="modal-ganador">
+        <div class="modal-contenido">
+            <h2>¡Felicidades Campeón! 🎉</h2>
+            <p>Has encontrado todos los productos Jumex.</p>
+            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+            <p><strong>Tu récord:</strong></p>
+            <p>Movimientos totales: <span id="record-movimientos" style="color: var(--verde-jumex); font-weight: bold;">0</span></p>
+            <p>Tiempo total: <span id="record-tiempo" style="color: var(--verde-jumex); font-weight: bold;">0s</span></p>
+            <p style="margin-top: 15px; font-style: italic; color: #666;">¡Avisa al organizador para registrar tu puntuación!</p>
+            <button class="btn-reiniciar" onclick="cerrarModal()">Jugar de nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        // Banco de imágenes (8 pares = 16 cartas)
+        // Puedes cambiar los enlaces URL dentro de las comillas por fotos de latas reales de Jumex si gustas.
+        const imagenesProductos = [
+            { nombre: 'Arizona', url: 'Ima JMX/arizona.jpg' },
+            { nombre: 'Bida', url: 'Ima JMX/Bida.jpg' },
+            { nombre: 'Jugosa', url: 'Ima JMX/jugosa.jpg' },
+            { nombre: 'Lata', url: 'Ima JMX/lata.jpg' },
+            { nombre: 'Logo', url: 'Ima JMX/logo.jpg' },
+            { nombre: 'Minibrik', url: 'Ima JMX/minibrik.jpg' },
+            { nombre: 'Sport', url: 'Ima JMX/sport.jpg' },
+            { nombre: 'xot', url: 'Ima JMX/xot.jpg' }
+        ];
+
+        // Duplicamos el array para tener parejas (16 cartas en total)
+        let cartasData = [...imagenesProductos, ...imagenesProductos];
+
+        let cartasVolteadas = [];
+        let paresEncontrados = 0;
+        let movimientos = 0;
+        let tiempo = 0;
+        let intervaloTiempo = null;
+        let juegoIniciado = false;
+        let bloqueado = false;
+
+        const tablero = document.getElementById('tablero');
+        const txtMovimientos = document.getElementById('contador-movimientos');
+        const txtTiempo = document.getElementById('contador-tiempo');
+
+        // Inicializar
+        crearTablero();
+
+        function iniciarCronometro() {
+            juegoIniciado = true;
+            intervaloTiempo = setInterval(() => {
+                tiempo++;
+                txtTiempo.innerText = tiempo + 's';
+            }, 1000);
+        }
+
+        function barajear(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function crearTablero() {
+            tablero.innerHTML = '';
+            const cartasMezcladas = barajear(cartasData);
+            
+            cartasMezcladas.forEach((producto, indice) => {
+                const elementoCarta = document.createElement('div');
+                elementoCarta.classList.add('carta');
+                elementoCarta.dataset.nombre = producto.nombre;
+                elementoCarta.dataset.id = indice;
+
+                elementoCarta.innerHTML = `
+                    <div class="cara cara-detras"></div>
+                    <div class="cara cara-frente">
+                        <img src="${producto.url}" alt="${producto.nombre}">
+                    </div>
+                `;
+
+                elementoCarta.addEventListener('click', voltearCarta);
+                tablero.appendChild(elementoCarta);
+            });
+        }
+
+        function voltearCarta() {
+            if (bloqueado) return;
+            if (this.classList.contains('volteada')) return;
+            
+            // Iniciar el reloj al primer click
+            if (!juegoIniciado) {
+                iniciarCronometro();
+            }
+
+            this.classList.add('volteada');
+            cartasVolteadas.push(this);
+
+            if (cartasVolteadas.length === 2) {
+                movimientos++;
+                txtMovimientos.innerText = movimientos;
+                verificarPareja();
+            }
+        }
+
+        function verificarPareja() {
+            bloqueado = true;
+            const [carta1, carta2] = cartasVolteadas;
+
+            if (carta1.dataset.nombre === carta2.dataset.nombre) {
+                // Es un par correcto
+                paresEncontrados++;
+                cartasVolteadas = [];
+                bloqueado = false;
+
+                if (paresEncontrados === imagenesProductos.length) {
+                    finalizarJuego();
+                }
+            } else {
+                // No coinciden, se vuelven a ocultar tras un breve retraso
+                setTimeout(() => {
+                    carta1.classList.remove('volteada');
+                    carta2.classList.remove('volteada');
+                    cartasVolteadas = [];
+                    bloqueado = false;
+                }, 1000);
+            }
+        }
+
+        function finalizarJuego() {
+            clearInterval(intervaloTiempo);
+            document.getElementById('record-movimientos').innerText = movimientos;
+            document.getElementById('record-tiempo').innerText = tiempo + 's';
+            
+            setTimeout(() => {
+                document.getElementById('modal-ganador').style.display = 'flex';
+            }, 500);
+        }
+
+        function reiniciarJuego() {
+            clearInterval(intervaloTiempo);
+            cartasVolteadas = [];
+            paresEncontrados = 0;
+            movimientos = 0;
+            tiempo = 0;
+            juegoIniciado = false;
+            bloqueado = false;
+            txtMovimientos.innerText = '0';
+            txtTiempo.innerText = '0s';
+            crearTablero();
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-ganador').style.display = 'none';
+            reiniciarJuego();
+        }
+    </script>
+</body>
+</html>
